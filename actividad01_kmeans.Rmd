@@ -1,6 +1,7 @@
 ---
 title: "Análisis de la estabilidad de los centroides en K-Medias en presencia de correlación"
-author: "Juan David Ospina Arango <br/> Universidad Nacional de Colombia - Sede Medellín <br/> Departamento de Ciencias de la Computación y de la Decisión <br/> Decisiones bajo incertidumbre (Optimización para aprendizaje de máquina)"
+author: "Daniel Felipe Pérez Grajales <br/> Universidad Nacional de Colombia - Sede Medellín <br/><br/> Efraín Galvis Amaya <br/> Universidad Nacional de Colombia - Sede Medellín <br/> <br/> **Profesor**: Juan David Ospina Arango <br/> Universidad Nacional de Colombia - Sede Medellín <br/> Departamento de Ciencias de la Computación y de la Decisión <br/> Decisiones bajo incertidumbre (Optimización para aprendizaje de máquina)"
+
 date: "Semestre 2021-01"
 output:
   html_document: default
@@ -12,6 +13,7 @@ knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
 library(mvtnorm)
 library(MBESS)
 library(Matrix)
+library(tidyverse)
 ```
 
 ### El algoritmo de K-Means
@@ -43,7 +45,7 @@ Se deberá desarrollar un experimento de simulación para analizar la estabilida
 
 1. Simular tres grupos de distribuciones normales bivariadas independientes pero con traslape. Es decir que los miembros de cada grupo son $X\sim N_2(\mu_j,\Sigma_j)$, $j=1,2,3$. A continuación se presenta un ejemplo de dos grupos generados a partir de distribuciones normales bivariadas:
 
-```{r}
+```{r , echo=TRUE}
 M_cor<-matrix(c(1,0.6,0.6,1),ncol=2)
 
 M_cov<-cor2cov(M_cor,sd=c(1,1))
@@ -51,15 +53,17 @@ M_cov<-cor2cov(M_cor,sd=c(1,1))
 M_cov_pd<-as.matrix(nearPD(M_cov)$mat)
 n1<-50 # Tamaño de la muestra de la clase 1
 n2<-80 # Tamaño de la muestra de la clase 2
-mu3<-c(0.5,1.5) # Vector de medias de la clase 1
-mu4<-c(-1,1.5) # Vector de medias de la clase 2
+n3<-40 # Tamaño de la muestra de la clase 2
+mu1<-c(0.5,1.5) # Vector de medias de la clase 1
+mu2<-c(-1,1.5) # Vector de medias de la clase 2
+mu3<-c(-2,1.5) # Vector de medias de la clase 3
 set.seed(1)
-muestra3<-rmvnorm(n=n1,mean=mu3,sigma=M_cov_pd,method="eigen")
-muestra4<-rmvnorm(n=n2,mean=mu4,sigma=M_cov_pd,method="eigen")
-muestra_nosep<-rbind(muestra3,muestra4)
-clase<-c(rep(-1,n1),rep(1,n2))
+muestra1<-rmvnorm(n=n1,mean=mu1,sigma=M_cov_pd,method="eigen")
+muestra2<-rmvnorm(n=n2,mean=mu2,sigma=M_cov_pd,method="eigen")
+muestra3<-rmvnorm(n=n3,mean=mu3,sigma=M_cov_pd,method="eigen")
+muestra_nosep<-rbind(muestra1,muestra2,muestra3)
+clase<-c(rep(-1,n1),rep(1,n2),rep(2,n3))
 muestra_nosep_df<-data.frame(muestra_nosep,clase)
-
 
 
 plot(muestra_nosep,
@@ -69,29 +73,254 @@ plot(muestra_nosep,
      xaxt="n",yaxt="n",
      xlab=expression(x[1]),
      ylab=expression(x[2]),
-     main="Ejemplo de dos grupos que se traslapan",
+     main="Tres grupos que se traslapan",
      las=1,cex=1.5,lwd=2)
 grid()
-legend("topleft",legend=c("Grupo 1", "Grupo 2"),
-       pch=c(1,3),col=c(1,3),pt.lwd=2,pt.cex=1.8,bty="n")
+legend("topleft",legend=c("Grupo 1", "Grupo 2","Grupo 3"),
+       pch=c(1,3,4),col=c(1,3,4),pt.lwd=2,pt.cex=1.8,bty="n")
 ```
 
 2. Encontrar los centroides con K-Means fijando el método de inicialización de los centroides. Encuentre los centroides para $n_c$ inicializaciones aleatorias.
 
+```{r , echo=TRUE}
+set.seed(1)
+kmeans <- kmeans(muestra_nosep_df[,-3], 3)
+
+muestra_nosep_df$clase <- kmeans$cluster
+
+ggplot() + geom_point(aes(x = X1, y = X2, color = clase), data = muestra_nosep_df, size = 2) +
+  scale_colour_gradientn(colours=rainbow(4)) +
+  geom_point(aes(x = kmeans$centers[, 1], y = kmeans$centers[, 2]), color = 'black', size = 3) + 
+  ggtitle('Clusters de Datos con k = 3 / K-Medios') + 
+  xlab('X1') + ylab('X2')+theme_minimal()
+
+
+```
+
 3. Suponga que el $i$-ésimo individuo es de la forma $X_i = [x_1^i \quad x_2^i]^T$. Cree la variable $x_3$ como $x_3^i=x_1^i+\epsilon_i$ con $\epsilon_i$ iid de media cero y varianza constante. ¿Cuál es la varianza de $x_3$? ¿Cuál es la covarianza entre $x_1$ y $x_3$? ¿Al agregar esta variable K-Means sigue detectando correctamente los centroides? ¿Qué pasa con la estabilidad de los centroides cuando la varianza de $\epsilon$ aumenta?
 
+```{r , echo=TRUE}
+  
+M_cor<-matrix(c(1,0.6,0.6,1),ncol=2)
+
+M_cov<-(cor2cov(M_cor,sd=c(1,1)))
+
+M_cov_pd<-as.matrix(nearPD(M_cov)$mat)
+n1<-50 # Tamaño de la muestra de la clase 1
+n2<-80 # Tamaño de la muestra de la clase 2
+mu1<-c(0.5,1.5) # Vector de medias de la clase 1
+mu2<-c(-1,1.5) # Vector de medias de la clase 2
+mu3<-0 # Vector de medias de la clase 3
+set.seed(1)
+ei=rnorm(n1, mean = 0, sd = 1)
+muestra1<-rmvnorm(n=n1,mean=mu1,sigma=M_cov_pd,method="eigen")
+muestra2<-rmvnorm(n=n2,mean=mu2,sigma=M_cov_pd,method="eigen")
+muestra3<-muestra1 + ei
+muestra_nosep1<-rbind(muestra1,muestra2,muestra3)
+clase<-c(rep(-1,n1),rep(1,n2),rep(2,nrow(muestra3)))
+muestra_nosep_df1<-data.frame(muestra_nosep1,clase)
+
+```
+
+* ## ¿Cuál es la varianza de $x_3$?
+```{r , echo=TRUE}
+#var(muestra_nosep_df1[muestra_nosep_df1$clase == 2, c(-3)])
+var(muestra3)
+paste("la varianza x3 es:",var(muestra3)[1,1]+var(muestra3)[2,2],sep = " ")
+var(muestra3[,1])
+var(muestra3[,2])
+
+```
+
+
+* ## ¿Cuál es la covarianza entre $x_1$ y $x_3$?
+
+```{r , echo=TRUE}
+BD_muesta1_muestra3<-muestra_nosep_df1 %>% 
+  subset(clase %in% c(-1,2))
+BD_muesta1_muestra3<-BD_muesta1_muestra3[,1:2]
+#####--- Cálculo del vector de medias y matriz de covarianzas
+med=apply(BD_muesta1_muestra3,2,mean)
+sc=cov(BD_muesta1_muestra3)           ####### S
+s=sc*(n1-1)/n1        ####### Sn=matriz de covarianzas
+s
+paste("la covarianza entre x1 y x3 es:",round(s[1,2],3),sep = " ")
+
+paste("la correlación entre x1 y x3 es:",round(cor(BD_muesta1_muestra3[,1],BD_muesta1_muestra3[,2]),3),sep = " ")
+```
+
+* ## ¿Al agregar esta variable K-Means sigue detectando correctamente los centroides?
+
+```{r , echo=TRUE}
+set.seed(1)
+kmeans1 <- kmeans(muestra_nosep_df1[,-3], 3)
+
+muestra_nosep_df1$clase <- kmeans1$cluster
+
+ggplot() + geom_point(aes(x = X1, y = X2, color = clase), data = muestra_nosep_df1, size = 2) +
+  scale_colour_gradientn(colours=rainbow(4)) +
+  geom_point(aes(x = kmeans1$centers[, 1], y = kmeans1$centers[, 2]), color = 'black', size = 3) + 
+  ggtitle('') + 
+  xlab('X1') + ylab('X2')+theme_minimal()
+
+###Centroides punto 2
+cetroid_pun2<- kmeans$centers
+cetroid_pun2
+###Centroides cambio en muestra 3
+cetroid_pun3<- kmeans1$centers
+cetroid_pun3
+paste0("Al agregar la variable x3 se nota un cambio en la posición de los centroides del cluster")
+```
+
+* ## ¿Qué pasa con la estabilidad de los centroides cuando la varianza de $\epsilon$ aumenta?
+
+```{r , echo=TRUE}
+M_cor<-matrix(c(1,0.6,0.6,1),ncol=2)
+
+M_cov<-(cor2cov(M_cor,sd=c(1,1)))
+
+M_cov_pd<-as.matrix(nearPD(M_cov)$mat)
+n1<-50 # Tamaño de la muestra de la clase 1
+n2<-80 # Tamaño de la muestra de la clase 2
+mu1<-c(0.5,1.5) # Vector de medias de la clase 1
+mu2<-c(-1,1.5) # Vector de medias de la clase 2
+mu3<-0 # Vector de medias de la clase 3
+set.seed(1)
+ei=rnorm(n1, mean = 0, sd = 4)
+muestra1<-rmvnorm(n=n1,mean=mu1,sigma=M_cov_pd,method="eigen")
+muestra2<-rmvnorm(n=n2,mean=mu2,sigma=M_cov_pd,method="eigen")
+muestra3<-muestra1 + ei
+muestra_nosep2<-rbind(muestra1,muestra2,muestra3)
+clase<-c(rep(-1,n1),rep(1,n2),rep(2,nrow(muestra3)))
+muestra_nosep_df2<-data.frame(muestra_nosep2,clase)
+
+set.seed(1)
+kmeans2 <- kmeans(muestra_nosep_df2[,-3], 3)
+
+muestra_nosep_df2$clase <- kmeans2$cluster
+
+ggplot() + geom_point(aes(x = X1, y = X2, color = clase), data = muestra_nosep_df2, size = 2) +
+  scale_colour_gradientn(colours=rainbow(4)) +
+  geom_point(aes(x = kmeans2$centers[, 1], y = kmeans2$centers[, 2]), color = 'black', size = 3) + 
+  ggtitle('') + 
+  xlab('X1') + ylab('X2')+theme_minimal()
+
+###Centroides epsilon con desviación standar=1
+cetroid_pun3<- kmeans1$centers
+cetroid_pun3
+###Centroides epsilon con desviación standar=4
+cetroid_pun4<- kmeans2$centers
+cetroid_pun4
+
+paste0("Al aumentar la varianza del epsilon de la variable x3= x1 + epsilon los centroides cambian")
+```
+
 4. Como en el paso anterior, cree las variables $x_4$ y $x_6$ como la suma de $x_2$ y otra variable de media cero y varianza constante y la variable $x_5$ como la suma de $x_3$ y otra variable de media cero y varianza constante. ¿Al agregar estas variables, K-Means sigue detectando correctamente los centroides? ¿Qué pasa cuando la estabilidad de los centroides cuando la varianza de las variables que se suman a las variables originales aumenta?
+```{r , echo=TRUE}
+
+M_cor<-matrix(c(1,0.6,0.6,1),ncol=2)
+
+M_cov<-(cor2cov(M_cor,sd=c(1,1)))
+
+M_cov_pd<-as.matrix(nearPD(M_cov)$mat)
+n1<-50 # Tamaño de la muestra de la clase 1
+n2<-60 # Tamaño de la muestra de la clase 2
+mu1<-c(0.5,1.5) # Vector de medias de la clase 1
+mu2<-c(-1,1.5) # Vector de medias de la clase 2
+mu3<-0 # Vector de medias de la clase 3
+set.seed(1)
+ei=rnorm(n1, mean = 0, sd = 1)
+ej=rnorm(n2, mean = 0, sd = 2)
+ek=rnorm(n2, mean = 0, sd = 5)
+en=rnorm(n1, mean = 0, sd = 4)
+
+muestra1<-rmvnorm(n=n1,mean=mu1,sigma=M_cov_pd,method="eigen")
+muestra2<-rmvnorm(n=n2,mean=mu2,sigma=M_cov_pd,method="eigen")
+muestra3<-muestra1 + ei
+muestra4<-muestra2 + ej
+muestra5<-muestra3 + en
+muestra6<-muestra2 + ek
+muestra_nosep1<-rbind(muestra1,muestra2,muestra3,muestra4,muestra5,muestra6)
+clase<-c(rep(-1,n1),rep(1,n2),rep(2,nrow(muestra3)),rep(3,nrow(muestra4)),rep(4,nrow(muestra5)),rep(5,nrow(muestra6)))
+muestra_nosep_df1<-data.frame(muestra_nosep1,clase)
+```
+
+* ## ¿Al agregar esta variable K-Means sigue detectando correctamente los centroides?
+
+```{r , echo=TRUE}
+set.seed(1)
+kmeans3 <- kmeans(muestra_nosep_df1[,-3], 6)
+
+muestra_nosep_df1$clase <- kmeans3$cluster
+
+ggplot() + geom_point(aes(x = X1, y = X2, color = clase), data = muestra_nosep_df1, size = 2) +
+  scale_colour_gradientn(colours=rainbow(4)) +
+  geom_point(aes(x = kmeans3$centers[, 1], y = kmeans3$centers[, 2]), color = 'black', size = 3) + 
+  ggtitle('') + 
+  xlab('X1') + ylab('X2')+theme_minimal()
+
+###Centroides punto 3
+cetroid_pun3<- kmeans2$centers
+cetroid_pun3
+###Centroides agregando más variables y aumentando la varianza
+cetroid_pun4<- kmeans3$centers
+cetroid_pun4
+
+```
+
+* ## ¿Qué pasa cuando la estabilidad de los centroides cuando la varianza de las variables que se suman a las variables originales aumenta?
+
+```{r , echo=TRUE}
+M_cor<-matrix(c(1,0.6,0.6,1),ncol=2)
+
+M_cov<-(cor2cov(M_cor,sd=c(1,1)))
+
+M_cov_pd<-as.matrix(nearPD(M_cov)$mat)
+n1<-50 # Tamaño de la muestra de la clase 1
+n2<-60 # Tamaño de la muestra de la clase 2
+mu1<-c(0.5,1.5) # Vector de medias de la clase 1
+mu2<-c(-1,1.5) # Vector de medias de la clase 2
+mu3<-0 # Vector de medias de la clase 3
+set.seed(1)
+ei=rnorm(n1, mean = 0, sd = 3)
+ej=rnorm(n2, mean = 0, sd = 4)
+ek=rnorm(n2, mean = 0, sd = 6)
+en=rnorm(n1, mean = 0, sd = 7)
+
+muestra1<-rmvnorm(n=n1,mean=mu1,sigma=M_cov_pd,method="eigen")
+muestra2<-rmvnorm(n=n2,mean=mu2,sigma=M_cov_pd,method="eigen")
+muestra3<-muestra1 + ei
+muestra4<-muestra2 + ej
+muestra5<-muestra3 + en
+muestra6<-muestra2 + ek
+muestra_nosep1<-rbind(muestra1,muestra2,muestra3,muestra4,muestra5,muestra6)
+clase<-c(rep(-1,n1),rep(1,n2),rep(2,nrow(muestra3)),rep(3,nrow(muestra4)),rep(4,nrow(muestra5)),rep(5,nrow(muestra6)))
+muestra_nosep_df1<-data.frame(muestra_nosep1,clase)
+
+set.seed(1)
+kmeans4 <- kmeans(muestra_nosep_df1[,-3], 6)
+
+muestra_nosep_df1$clase <- kmeans4$cluster
+
+ggplot() + geom_point(aes(x = X1, y = X2, color = clase), data = muestra_nosep_df1, size = 2) +
+  scale_colour_gradientn(colours=rainbow(4)) +
+  geom_point(aes(x = kmeans4$centers[, 1], y = kmeans4$centers[, 2]), color = 'black', size = 3) + 
+  ggtitle('') + 
+  xlab('X1') + ylab('X2')+theme_minimal()
+
+###Centroides punto 3
+cetroid_anteriores<- kmeans3$centers
+cetroid_anteriores
+###Centroides agregando más variables
+cetroid_pun4<- kmeans4$centers
+cetroid_pun4
+paste0("Al aumentar la varianza del epsilon de la variables nuevas los centroides cambian")
+
+```
+
 
 5. A partir de estos experimentos, ¿qué se podría decir del efecto de la correlación entre variables y la estabilidad de los centroides en K-Medias?
 
-### Equipos y fecha de entrega
-1. El trabajo se realizará en equipos de tres a cinco estudiantes.
-2. El código generado para el estudio se debe publicar en GitHub.
-3. El reporte se debe publicar como una entrada de blog (por ejemplo en GitHub o [Rpubs](https://rpubs.com)). Debe contener:
- + Planteamiento del problema
- + Descripción de la metodología
- + Resultados
- + Bibliografía
-4. La entrega se hará a través de la plataforma Google Classroom del curso en el espacio correspondiente para ello.
++ Al agregar nuevas variables durante la simulación,las variable eran altamente correlacionadas porque eran simuladas a partir de una variable ya conocida y se le sumaba una variable iid con media cero y desviación estandar constante, afectaba el calculo de los centroides de los cluester, ese cambio era mas fuerte a cuando se aumentaba la varianza.
 
 
