@@ -13,12 +13,14 @@ Curso Especialización en AI Universidad Nacional de Colombia
  Archivo actividad01_kmeans.html
  + Bibliografía
  
- Introduction to Statistical Learning, Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani libro
- Points of Significance: Clustering, Nature Methods, Martin Krzywinski & Naomi Altman
- Practical Guide to Cluster Analysis in R, Alboukadel kassambara
- Cluster Analysis for Gene Expression Data: A Survey. Daxin Jiang, Chun Tang, Aidong Zhang, Department of Computer Science and Engineering
+[1] Introduction to Statistical Learning, Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani libro Points of Significance: Clustering, Nature Methods, Martin Krzywinski & Naomi Altman
+ 
+[2] Practical Guide to Cluster Analysis in R, Alboukadel kassambara
+ 
+[3] Cluster Analysis for Gene Expression Data: A Survey. Daxin Jiang, Chun Tang, Aidong Zhang, Department of Computer Science and Engineering
  Ward’s Hierarchical Agglomerative Clustering Method: Which Algorithms Implement Ward’s Criterion? by Fionn Murtagh y Pierre Legendre
- clValid, an R package for cluster validation. Guy Brock, Vasyl Pihur, Susmita Datta, and Somnath Datta Department of Bioinformatics and Biostatistics, University of Louisville
+ 
+[4] clValid, an R package for cluster validation. Guy Brock, Vasyl Pihur, Susmita Datta, and Somnath Datta Department of Bioinformatics and Biostatistics, University of Louisville
  https://en.wikipedia.org/wiki/Jaccard_index
- How Many Clusters? Which Clustering Method? Answers Via Model-Based Cluster Analysis. C. Fraley and A. E. Raftery
- https://en.wikipedia.org/wiki/DBSCAN
+ 
+ [5] How Many Clusters? Which Clustering Method? Answers Via Model-Based Cluster Analysis. C. Fraley and A. E. Raftery https://en.wikipedia.org/wiki/DBSCAN
