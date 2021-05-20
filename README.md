@@ -10,7 +10,7 @@ Curso Especialización en AI Universidad Nacional de Colombia
  Se desarrollo un experimento de simulación para analizar la estabilidad del algoritmo de K-Means, afectando cambios en  varianza, covarianza y correlación de la variables, añadiendo más variables.
  + Resultados
  
- Archivo actividad01_kmeans.html
+ Archivo actividad01_kmeans_ajustes.html
  + Bibliografía
  
 [1] Introduction to Statistical Learning, Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani libro Points of Significance: Clustering, Nature Methods, Martin Krzywinski & Naomi Altman
